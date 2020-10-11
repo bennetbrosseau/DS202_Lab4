@@ -1,0 +1,256 @@
+---
+title: "TEAM"
+output: html_document
+---
+
+# Loading the Data Sets in to Rstudio
+```{r}
+library(readxl)
+library(tidyverse)
+library(dplyr)
+Defense <- read_excel('Desktop/DS202_Lab4/cyclonesFootball2019.xlsx', sheet='Defensive')
+str(Defense)
+Offense <- read_excel('Desktop/DS202_Lab4/cyclonesFootball2019.xlsx', sheet='Offensive')
+str(Offense)
+Biography <- read_excel('Desktop/DS202_Lab4/cyclonesFootball2019.xlsx', sheet='Biography')
+str(Biography)
+```
+
+# Cleaning for Defense
+```{r}
+defClean <- Defense %>%
+  mutate(Name = as.factor(Name),
+         Opponent_Opponent = as.factor(Opponent_Opponent),
+         Tackles_Solo = as.numeric(Tackles_Solo), 
+         Tackles_ASST = as.numeric(Tackles_ASST), 
+         Tackles_TFL = as.numeric(Tackles_TFL), 
+         Tackles_Sack = as.numeric(Tackles_Sack), 
+         Turnover_FF = as.numeric(Turnover_FF), 
+         Turnover_FR = as.numeric(Turnover_FR), 
+         Pass_QBH = as.numeric(Pass_QBH), 
+         Pass_PB = as.numeric(Pass_PB), 
+         Turnover_INT = as.numeric(Turnover_INT))
+str(defClean)
+```
+
+# Cleaning for Offense
+```{r}
+Offense <- Offense %>%
+  separate(Passing_CMPATT, into = c("Passing_CMP", "Passing_ATT"))
+str(Offense)
+  
+  
+offClean <- Offense %>%
+  mutate(Name = as.factor(Name),
+         Opponent_Opponent = as.factor(Opponent_Opponent),
+         Rushing_ATT = as.numeric(Rushing_ATT),
+         Rushing_YDS = as.numeric(Rushing_YDS),
+         Rushing_TD = as.numeric(Rushing_TD),
+         Receiving_REC = as.numeric(Receiving_REC),
+         Receiving_YDS = as.numeric(Receiving_YDS),
+         Receiving_TD = as.numeric(Receiving_TD),
+         Passing_YDS = as.numeric(Passing_YDS),
+         Passing_TD = as.numeric(Passing_TD),
+         Passing_INT = as.numeric(Passing_INT),
+         Passing_CMP = as.numeric(Passing_CMP),
+         Passing_ATT = as.numeric(Passing_ATT))
+str(offClean)
+```
+
+
+# Cleaning for Biography
+```{r}
+Biography <- Biography %>%
+  separate(Height, into = c("Height_Feet", "Height_Inches"))
+
+bioClean <- Biography %>%
+  mutate(Height_Feet = as.numeric(Height_Feet),
+         Height_Inches = as.numeric(Height_Inches))
+str(bioClean)
+```
+
+
+# Tidying - 1
+```{r}
+defClean <- defClean %>%
+  pivot_longer(Tackles_Solo:Pass_PB, names_to = 'DEFstat', values_to = 'DEFstat_count')
+head(defClean)
+
+offClean <- offClean %>%
+  pivot_longer(Rushing_ATT:Passing_INT, names_to = 'OFFstat', values_to = 'OFFstat_count')
+(offClean)
+```
+
+# Tidying - 2
+```{r}
+library(ggplot2)
+ggplot(defClean, aes(x = DEFstat, weight = DEFstat_count)) + geom_bar() + coord_flip()
+```
+
+
+# Tidying -3
+```{r}
+Iowa <- defClean %>%
+  select(Opponent_Opponent, DEFstat, DEFstat_count) %>%
+  filter(Opponent_Opponent %in% c('Iowa'), DEFstat %in% 'Tackles_Solo') 
+head(Iowa)
+NotreDame <- defClean %>%
+  select(Opponent_Opponent, DEFstat, DEFstat_count) %>%
+  filter(Opponent_Opponent %in% c('Notre Dame'), DEFstat %in% 'Tackles_Solo') 
+head(NotreDame)
+
+Opponent <- Iowa %>% full_join(NotreDame)
+Opponent <- Opponent %>%
+  select(Opponent_Opponent, DEFstat_count)
+head(Opponent)
+ggplot(Opponent, aes(x = Opponent_Opponent, y = DEFstat_count)) + geom_point() + geom_jitter()  
+```
+
+## ISU had a better defensive game against Notre Dame because they had more players who had more solo tackles.
+
+
+
+# Tidying - 4
+```{r}
+bioClean <- bioClean %>%
+  separate(Hometown, into = c("City", "State"), sep= ',')
+head(bioClean)
+```
+# Tidying - 5
+```{r}
+q5 <- bioClean %>%
+  group_by(State) %>%
+summarize(Total = n())
+(q5)
+```
+
+
+# Joining - 1
+```{r}
+TacklesdefClean <- defClean %>%
+  filter(DEFstat == "Tackles_Solo") %>%
+  group_by(Name) %>%
+  summarize(total_tackles = sum(DEFstat_count)) %>%
+  arrange(total_tackles)
+TacklesdefClean
+
+OffBio <- offClean %>% left_join(bioClean) 
+OffBio
+
+total2019 <- OffBio %>% left_join(defClean)
+view(total2019)
+
+offstates <- OffBio %>%
+  group_by(State) %>%
+summarize(Total = n())
+
+offstates
+
+```
+
+# Joining - 2
+```{r}
+
+```
+
+
+
+# Joining - 3
+## Adding 2018 data
+```{r}
+OldDefense <- read_excel('Desktop/DS202_Lab4/cyclonesFootball2018.xlsx', sheet='Defensive')
+OldOffense <- read_excel('Desktop/DS202_Lab4/cyclonesFootball2018.xlsx', sheet='Offensive')
+OldBiography <- read_excel('Desktop/DS202_Lab4/cyclonesFootball2018.xlsx', sheet='Biography')
+```
+
+
+## Cleaning Defensive 2018 Data
+```{r}
+OlddefClean <- OldDefense %>%
+  mutate(Name = as.factor(Name),
+         Opponent_Opponent = as.factor(Opponent_Opponent),
+         Tackles_Solo = as.numeric(Tackles_Solo), 
+         Tackles_ASST = as.numeric(Tackles_ASST), 
+         Tackles_TFL = as.numeric(Tackles_TFL), 
+         Tackles_Sack = as.numeric(Tackles_Sack), 
+         Turnover_FF = as.numeric(Turnover_FF), 
+         Turnover_FR = as.numeric(Turnover_FR), 
+         Pass_QBH = as.numeric(Pass_QBH), 
+         Pass_PB = as.numeric(Pass_PB), 
+         Turnover_INT = as.numeric(Turnover_INT))
+str(OlddefClean)
+
+OlddefClean <- OlddefClean %>%
+  pivot_longer(Tackles_Solo:Pass_PB, names_to = 'DEFstat', values_to = 'DEFstat_count')
+head(OlddefClean)
+
+```
+
+
+
+## Cleaning Offensive 2018 Data
+```{r}
+OldOffense <- OldOffense %>%
+  separate(Passing_CMPATT, into = c("Passing_CMP", "Passing_ATT"))
+str(Offense)
+  
+  
+OldoffClean <- OldOffense %>%
+  mutate(Name = as.factor(Name),
+         Opponent_Opponent = as.factor(Opponent_Opponent),
+         Rushing_ATT = as.numeric(Rushing_ATT),
+         Rushing_YDS = as.numeric(Rushing_YDS),
+         Rushing_TD = as.numeric(Rushing_TD),
+         Receiving_REC = as.numeric(Receiving_REC),
+         Receiving_YDS = as.numeric(Receiving_YDS),
+         Receiving_TD = as.numeric(Receiving_TD),
+         Passing_YDS = as.numeric(Passing_YDS),
+         Passing_TD = as.numeric(Passing_TD),
+         Passing_INT = as.numeric(Passing_INT),
+         Passing_CMP = as.numeric(Passing_CMP),
+         Passing_ATT = as.numeric(Passing_ATT))
+str(OldoffClean)
+
+OldoffClean <- OldoffClean %>%
+  pivot_longer(Receiving_REC:Passing_INT, names_to = 'OFFstat', values_to = 'OFFstat_count')
+head(OldoffClean)
+
+```
+
+
+## Cleaning Biography 2018 Data
+```{r}
+OldBiography
+
+OldBiography <- OldBiography %>%
+  separate(Height, into = c("Height_Feet", "Height_Inches"))
+
+OldbioClean <- OldBiography %>%
+  mutate(Height_Feet = as.numeric(Height_Feet),
+         Height_Inches = as.numeric(Height_Inches))
+
+OldbioClean <- OldbioClean %>%
+  separate(Hometown, into = c("City", "State"), sep= ',')
+head(OldbioClean)
+
+```
+```{r}
+OffBio2018 <- OldbioClean %>% left_join(OldoffClean)
+OffBio2018
+total2018 <- OffBio2018 %>% left_join(OlddefClean)
+total2018
+
+newtotal2018 <- total2018 %>% 
+  select(Name, OFFstat_count) %>%
+  group_by(Name) %>%
+  summarize(total = sum(OFFstat_count))
+newtotal2018
+  
+newtotal2019 <- total2019 %>%
+  select(Name, OFFstat_count) %>%
+  group_by(Name) %>%
+  summarize(total = sum(OFFstat_count))
+newtotal2019
+
+
+```
